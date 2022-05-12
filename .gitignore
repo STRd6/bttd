@@ -1,0 +1,7 @@
+.nyc_output/
+coverage/
+data.txt
+dist/
+docs/
+node_modules/
+out/
