@@ -69,10 +69,9 @@ pack = (entries, boundary) ->
   Buffer.from await (new Blob(pieces)).arrayBuffer()
 
 if require.main is module
-  console.log process.argv
-  process.exit 0
+  rootDir = "assets/"
+  outPath = "dist/data.txt"
 
-  rootDir = "out/"
   base = resolve(rootDir) + sep
   entries = []
 
@@ -84,6 +83,6 @@ if require.main is module
   buf = await pack entries
   console.log buf
 
-  await writeFile("data2.txt", buf)
+  await writeFile(outPath, buf)
 
   process.exit()

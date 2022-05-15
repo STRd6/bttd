@@ -45,11 +45,11 @@
     ]
   },
   "nyc": {
-    "check-coverage": true,
-    "branches": 96,
-    "lines": 99,
+    "check-coverage": false,
+    "branches": 100,
+    "lines": 100,
     "functions": 100,
-    "statements": 99,
+    "statements": 100,
     "reporter": [
       "lcov",
       "text"
@@ -58,6 +58,7 @@
       ".coffee"
     ],
     "exclude": [
+      "assets/",
       "build/"
     ],
     "sourceMap": false,

@@ -8,4 +8,4 @@ coffee build/main.coffee
 rm -rf assets/source
 cp -r source/ assets/
 cp dist/index.js assets/game.js
-coffee build/pack.coffee assets/ dist/data.txt
+coffee build/pack.coffee
