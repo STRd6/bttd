@@ -11,6 +11,7 @@
   "license": "SEE LICENSE IN 💖",
   "devDependencies": {
     "@danielx/coffeecoverage": "^4.0.0-pre.3",
+    "@danielx/tiny-game": "^0.0.1",
     "@types/coffeescript": "^2.5.1",
     "@types/jsdom": "^16.2.14",
     "@types/mocha": "^9.1.1",
@@ -63,7 +64,7 @@
     "instrument": false
   },
   "scripts": {
-    "build": "bash script/prepublish && coffee build/main.coffee",
+    "build": "bash script/build",
     "doc": "typedoc types/types.d.ts",
     "prepublish": "bash script/prepublish",
     "test": "nyc mocha"

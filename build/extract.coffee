@@ -8,6 +8,9 @@ textDecoder = new TextDecoder
 
 # This implementation isn't completely robust, but since I'm controlling the
 # published blob it is fine for now.
+###*
+@param text {string}
+###
 parseFormDataText = (text, f) ->
   # boundary is first line
   pos = text.indexOf(crlf)
