@@ -90,5 +90,3 @@ if require.main is module
   await writeFile(outPath, buf)
 
   process.exit()
-
-export {}

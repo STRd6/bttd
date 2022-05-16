@@ -3,11 +3,18 @@
 {ext, ui, util} = TinyGame
 {loadSpritesheet, parseLevel} = ext
 {HealthBar, UIButton} = ui
-{DataType, approach, clamp, createEnum, rand, squirrel3, stopKeyboardHandler, wrap} = util
+{DataType, approach, clamp, createEnum, rand, squirrel3, stopKeyboardHandler} = util
 {BIT, U8, U16, FIXED16, FIXED32, I32} = DataType
 {addBehaviors, addClass, addEntity, config, sound} = game
 {screenWidth, screenHeight} = config
 {getController, nullController} = game.system.input
+
+{tileWidth, tileHeight} = require("./const")
+{lookupTable, noise1d, to8WayDirection} = require("./util")
+Data = require "./data"
+
+# Add tilemap behavior
+require "./tilemap"
 
 CENTER = new Point 0.5, 0.5
 
@@ -28,37 +35,6 @@ Object.defineProperty DisplayObject.prototype, cullCheckSym,
       hh: hh
 
     @visible = collides(childBounds, worldBounds)
-
-noise1d = (index, seed) ->
-  squirrel3(index, seed)
-
-#  5  6  7
-#   \ | /
-# 4 -   - 0
-#   / | \
-#  3  2  1
-
-to8WayDirection = (x, y) ->
-  x = sign x
-  if y > 0
-    2 - x
-  else if y < 0
-    6 + x
-  else
-    if x < 0
-      4
-    else
-      0
-
-lookupTable = (key, table, properties) ->
-  if typeof properties is "string"
-    properties = properties.split(/\s+/)
-
-  properties.reduce (o, prop) ->
-    o[prop] = get: ->
-      table[@[key]][prop]
-    o
-  , {}
 
 ItemType = createEnum """
   Food
@@ -369,57 +345,6 @@ overlap = (a, b) ->
 collides = (a, b) ->
   abs(b.x - a.x) < a.hw + b.hw and
   abs(b.y - a.y) < a.hh + b.hh
-
-# Data Tables
-
-Data =
-  projectile: [{
-    # 0 arrow
-    ay: 0.25
-    damage: 1
-    textureKey: "arrow"
-  }, {
-    # 1 fire arrow
-    ay: 0.25
-    damage: 3
-    light: true
-    r1: 32
-    r2: 48
-    textureKey: "arrow"
-    # TODO: Particles
-  }, {
-    # 2 bolt
-    ay: 0.05
-    damage: 5
-    textureKey: "bolt"
-  }]
-
-  tile: [
-    {}, # 0
-    { # 1
-      accentTop: [11, 12, 13]
-      accentBottom: [4, 5]
-      accentLeft: [23,24]
-      accentRight: [21, 22]
-      solid: true
-      tile: 25
-      vary: true
-    }, { # 2
-      ladder: true
-      solid: true
-      tile: 10
-    }
-  ]
-
-  attack: [{ # dagger
-    damage: 1
-    knockback: 1
-    maxAge: 2
-  }, { # sword
-    damage: 2
-    knockback: 4
-    maxAge: 3
-  }]
 
 addBehaviors
   age:
@@ -928,165 +853,6 @@ addBehaviors
 
       if rotation?
         sprite.rotation = rotation
-
-  "display:object:tilemap":
-    properties:
-      tilemap:
-        value: true
-
-    create: (e) ->
-      {data, width, height} = game.levelData
-
-      # proto for tile blocks
-      tileBase = Object.defineProperties {},
-        lookupTable("tileIdx", Data.tile, """
-          accentTop
-          accentBottom
-          accentLeft
-          accentRight
-          ladder
-          solid
-          tile
-          vary
-        """)
-
-      e.blocks = blocks = []
-      e.x = e.hw = width * tileWidth / 2
-      e.y = e.hh = height * tileHeight / 2
-
-      # Aggregate horizontal and vertical runs
-      # Scan ahead while adjacent, flag to skip matching data,
-      # add a single aggregated object
-
-      skip = new Uint8Array(data.length)
-
-      # Map from palette index to tile index, will become obsolete with better
-      # tilemap editing tools
-      tileIdxMap = new Map [
-        [1, 1]
-        [3, 2]
-      ]
-
-      data.forEach (n, i) ->
-        if n and !skip[i]
-          x = i % width
-          y = floor i / width
-
-          # These are the values of tile data, the rest are entities and skipped
-          # TODO: split entities from tiles completely
-          if tileIdxMap.has(n)
-            adjacent = calculateAdjacent(x, y, n, data, width)
-
-            # scan right
-            xStart = x
-            # Only aggregate same top/bottom adjacency status
-            t = adjacent & 8
-            b = adjacent & 2
-            l = adjacent & 1
-            mask = 0b1010
-
-            nextAdjacent = calculateAdjacent(x+1, y, n, data, width)
-            while ((x + 1 < width) and (adjacent & 4) and (nextAdjacent & mask) is (adjacent & mask))
-              x++
-              if x < width
-                skip[x + y * width] = 1
-              adjacent = nextAdjacent
-              nextAdjacent = calculateAdjacent(x+1, y, n, data, width)
-
-            # At the end of the loop if x > xStart then
-            # x is pointing to a non-matching cell
-            # adjacent is the adjent info for the rightmost matching cell
-
-            span = x - xStart
-
-            if span > 0
-              x = (x + xStart) / 2
-
-              display =
-                adjacent: t + (adjacent & 4) + b + l
-                height: tileHeight
-                width: (span + 1) * tileWidth
-            else
-              # scan down
-              yStart = y
-              # Only aggregate same left/right adjacency status
-              t = adjacent & 8
-              r = adjacent & 4
-              l = adjacent & 1
-              mask = 0b0101
-
-              nextAdjacent = calculateAdjacent(x, y+1, n, data, width)
-              while ((y + 1 < height) and (adjacent & 2) and (nextAdjacent & mask) is (adjacent & mask))
-                if y < height
-                  y++
-                skip[x + y * width] = 1
-                adjacent = nextAdjacent
-                nextAdjacent = calculateAdjacent(x, y+1, n, data, width)
-
-              # At the end of the loop if x > xStart then
-              # x is pointing to a non-matching cell
-              # adjacent is the adjent info for the rightmost matching cell
-
-              span = y - yStart
-              if span > 0
-                y = (y + yStart) / 2
-
-                display =
-                  adjacent: t + r + (adjacent & 2) + l
-                  height: (span + 1) * tileHeight
-                  width: tileWidth
-
-              else
-                display =
-                  adjacent:adjacent
-                  height: tileHeight
-                  width: tileWidth
-
-            block = Object.create(tileBase)
-
-            blocks.push Object.assign block,
-              x: (x+0.5) * tileWidth
-              y: (y+0.5) * tileHeight
-              hw: display.width / 2
-              hh: display.height / 2
-              adjacent: display.adjacent
-              tileIdx: tileIdxMap.get(n)
-
-    display: (e) ->
-      # Is there a good way to delegate display and render calls to every item
-      # in the collection? How easy is it to reuse the WallTile "class" here?
-      # How about the debug component?
-      # skip for now but think about it!
-
-      container = new Container
-
-      Object.defineProperty container, cullCheckSym,
-        value: (worldBounds) ->
-          # TODO: add x, y offset for world bounds
-
-          {children} = @
-          i = 0
-          while child = children[i++]
-            child[cullCheckSym](worldBounds)
-
-      # TODO: Add each tile based on tile data, this will subsume
-      # display:object:tile
-      e.blocks.forEach (data, i) ->
-        tile = createTile data, i
-
-        # Manually adding debug component behavior, probably a little brittle
-        tile.debugDisplay = game.behaviors["display:component:debug"].display(data)
-        tile.addChild tile.debugDisplay
-
-        container.addChild tile
-
-      return container
-
-    # No need to update since tiles are static for now
-    # may need to handle animations later
-    render: (e, container) ->
-      container.children.forEach (c) ->
-        c.debugDisplay.visible = game.debug
 
   enemyJump:
     properties:
@@ -1684,31 +1450,6 @@ makers =
       x: x
       y: y
 
-# 0b1111 top,right,bottom,left
-calculateAdjacent = (x, y, n, data, width) ->
-  v = data[(y - 1) * width + x]
-  t = !v? or v is n
-
-  if x < width - 1
-    v = data[y * width + x + 1]
-    r = !v? or v is n
-  else
-    r = 1
-
-  v = data[(y + 1) * width + x]
-  b = !v? or v is n
-
-  if x >= 1
-    v = data[y * width + x - 1]
-    l = !v? or v is n
-  else
-    l = 1
-
-  t * 8 + r * 4 + b * 2 + l
-
-tileHeight = 16
-tileWidth = 16
-
 loadLevel = (path, offset={x:0, y:0}) ->
   parseLevel(path)
   .then (levelData) ->
@@ -1763,118 +1504,6 @@ game.start = ->
           x: (x+0.5) * tileWidth
           y: (y+0.5) * tileHeight
   .catch console.error
-
-
-# Gnarly method for creating a PIXI container for tile blocks
-createTile = (e, index) ->
-  {adjacent, hw, hh, vary, x, y, tileIdx} = e
-
-  {
-    accentTop
-    accentRight
-    accentBottom
-    accentLeft
-    ladder
-    solid
-    tile
-    vary
-  } = Data.tile[tileIdx]
-
-  {seed, tileset} = game
-
-  texture = tileset[tile]
-
-  # Generate bits and use result as next seed
-  nextRand = ->
-    seed = noise1d(index, seed)
-
-  width = hw * 2
-  height = hh * 2
-
-  container = new Container
-  container.x = x
-  container.y = y
-  container.entity = e
-
-  thw = tileWidth / 2
-  thh = tileHeight / 2
-
-  x = 0
-  y = 0
-  while y < height
-    x = 0
-    while x < width
-      bits = nextRand()
-      mask = 1
-      randomUnits = [0...6].map (i) ->
-        unit = ((bits & mask) >> i) || -1
-        mask <<= 1
-        return unit
-
-      randomIndex0 = (0xf00 & bits) >> 8
-      randomIndex1 = (0xf000 & bits) >> 12
-      randomIndex2 = (0xf0000 & bits) >> 16
-      randomIndex3 = (0xf00000 & bits) >> 20
-
-      sprite = new Sprite texture
-      sprite.x = x - hw + thw
-      sprite.y = y - hh + thh
-      sprite.anchor = CENTER
-      if vary
-        sprite.scale.x = randomUnits[0]
-        sprite.scale.y = randomUnits[1]
-
-      container.addChild sprite
-
-      # Add accents on edges based on non-adjacency to tiles of same type
-      aTexture = accentLeft and tileset[wrap(accentLeft, randomIndex0)]
-      if x is 0 and adjacent? and !(adjacent & 1) and aTexture
-        accent = new Sprite aTexture
-        accent.x = x - hw + thw
-        accent.y = y - hh + thh
-        accent.anchor = CENTER
-        if vary
-          accent.scale.y = randomUnits[2]
-
-        container.addChild accent
-
-      aTexture = accentRight and tileset[wrap(accentRight, randomIndex1)]
-      if x is width - tileWidth and adjacent? and !(adjacent & 4) and aTexture
-        accent = new Sprite aTexture
-        accent.x = x - hw + thw
-        accent.y = y - hh + thh
-        accent.anchor = CENTER
-        if vary
-          accent.scale.y = randomUnits[3]
-
-        container.addChild accent
-
-      aTexture = accentTop and tileset[wrap(accentTop, randomIndex2)]
-      if y is 0 and adjacent? and !(adjacent & 8) and aTexture
-        accent = new Sprite aTexture
-        accent.x = x - hw + thw
-        accent.y = y - hh + thh
-        accent.anchor = CENTER
-        if vary
-          accent.scale.x = randomUnits[4]
-
-        container.addChild accent
-
-      aTexture = accentBottom and tileset[wrap(accentBottom, randomIndex3)]
-      if y is height - tileHeight and adjacent? and !(adjacent & 2) and aTexture
-        accent = new Sprite aTexture
-        accent.x = x - hw + thw
-        accent.y = y - hh + thh
-        accent.anchor = CENTER
-        if vary
-          accent.scale.x = randomUnits[5]
-
-        container.addChild accent
-
-      x += tileWidth
-    y += tileHeight
-
-  return container
 
 window.tileMode = (name, size) ->
   game.destroy()

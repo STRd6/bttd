@@ -864,6 +864,11 @@ coffeescript@2.6.1:
   resolved "https://registry.yarnpkg.com/coffeescript/-/coffeescript-2.6.1.tgz#f9e5d4930e1b8a1c5cfba7f95eebd18694ce58fd"
   integrity sha512-GG5nkF93qII8HmHqnnibkgpp/SV7PSnSPiWsbinwya7nNOe95aE/x2xrKZJFks8Qpko3TNrC+/LahaKgrz5YCg==
 
+coffeescript@^2.6.1:
+  version "2.7.0"
+  resolved "https://registry.yarnpkg.com/coffeescript/-/coffeescript-2.7.0.tgz#a43ec03be6885d6d1454850ea70b9409c391279c"
+  integrity sha512-hzWp6TUE2d/jCcN67LrW1eh5b/rSDKQK6oD6VMLlggYVUUFexgTH9z3dNYihzX4RMhze5FTUsUmOXViJKFQR/A==
+
 color-convert@^1.9.0:
   version "1.9.3"
   resolved "https://registry.yarnpkg.com/color-convert/-/color-convert-1.9.3.tgz#bb71850690e1f136567de629d2d5471deda4c1e8"
@@ -1091,6 +1096,14 @@ esbuild-android-arm64@0.14.39:
   resolved "https://registry.yarnpkg.com/esbuild-android-arm64/-/esbuild-android-arm64-0.14.39.tgz#f608d00ea03fe26f3b1ab92a30f99220390f3071"
   integrity sha512-+twajJqO7n3MrCz9e+2lVOnFplRsaGRwsq1KL/uOy7xK7QdRSprRQcObGDeDZUZsacD5gUkk6OiHiYp6RzU3CA==
 
+esbuild-coffeescript@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/esbuild-coffeescript/-/esbuild-coffeescript-2.0.0.tgz#946e85cc7a27ab0952d0b26607a2dd7d48397407"
+  integrity sha512-cRdwtqMip6tNihjVp6agE0G2SqXQxj7SZHIVex9sLP8vm6M801xwjNMHPoDUTCfCcMIa1X20/hqetgomftMVOA==
+  dependencies:
+    coffeescript "^2.6.1"
+    esbuild "^0.14.14"
+
 esbuild-darwin-64@0.14.39:
   version "0.14.39"
   resolved "https://registry.yarnpkg.com/esbuild-darwin-64/-/esbuild-darwin-64-0.14.39.tgz#31528daa75b4c9317721ede344195163fae3e041"
@@ -1181,7 +1194,7 @@ esbuild-windows-arm64@0.14.39:
   resolved "https://registry.yarnpkg.com/esbuild-windows-arm64/-/esbuild-windows-arm64-0.14.39.tgz#00268517e665b33c89778d61f144e4256b39f631"
   integrity sha512-sBZQz5D+Gd0EQ09tZRnz/PpVdLwvp/ufMtJ1iDFYddDaPpZXKqPyaxfYBLs3ueiaksQ26GGa7sci0OqFzNs7KA==
 
-esbuild@^0.14.38:
+esbuild@^0.14.14, esbuild@^0.14.38:
   version "0.14.39"
   resolved "https://registry.yarnpkg.com/esbuild/-/esbuild-0.14.39.tgz#c926b2259fe6f6d3a94f528fb42e103c5a6d909a"
   integrity sha512-2kKujuzvRWYtwvNjYDY444LQIA3TyJhJIX3Yo4+qkFlDDtGlSicWgeHVJqMUP/2sSfH10PGwfsj+O2ro1m10xQ==
