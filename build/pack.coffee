@@ -43,7 +43,7 @@ crlf = "\r\n"
 #
 ###*
 @param entries {[string, Buffer][]}
-@param boundary {string}
+@param [boundary] {string}
 ###
 pack = (entries, boundary) ->
   boundary ?= "whimsyspacefdfs" + randomHex()
@@ -73,12 +73,16 @@ if require.main is module
   outPath = "dist/data.txt"
 
   base = resolve(rootDir) + sep
+  #
+  ###* @type {[string, Buffer][]} ###
   entries = []
 
   for await path from getFiles(base)
     relative = path.replace(base, "").replace(/\\/g, "/")
     console.log relative
-    entries.push [relative, await readFile(path)]
+    ###* @type {[string, Buffer]} ###
+    entry = [relative, await readFile(path)]
+    entries.push entry
 
   buf = await pack entries
   console.log buf
@@ -86,3 +90,5 @@ if require.main is module
   await writeFile(outPath, buf)
 
   process.exit()
+
+export {}

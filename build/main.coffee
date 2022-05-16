@@ -1,7 +1,7 @@
 esbuild = require 'esbuild'
 
 watch = process.argv.includes '--watch'
-minify = !watch || process.argv.includes '--minify'
+# minify = !watch || process.argv.includes '--minify'
 sourcemap = true
 
 esbuild.build({

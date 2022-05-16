@@ -4,12 +4,12 @@
 
 # FormData as a file system
 crlf = "\r\n"
-textDecoder = new TextDecoder
 
 # This implementation isn't completely robust, but since I'm controlling the
 # published blob it is fine for now.
 ###*
 @param text {string}
+@param f {{set(name: string, blob: Blob): void }}
 ###
 parseFormDataText = (text, f) ->
   # boundary is first line
@@ -28,12 +28,19 @@ parseFormDataText = (text, f) ->
     # match headers
     headerEnd = chunk.indexOf(crlf + crlf)
     break if headerEnd is -1
+    ###* @type {{[key: string]: string}}###
+    #@ts-ignore
     headers = {}
-    chunk.slice(0, headerEnd).split(crlf).map (headerText) ->
+    chunk.slice(0, headerEnd).split(crlf).forEach (headerText) ->
       if headerText.length
         match = headerText.match(/^([^:]+): *(.*)$/)
         if match
-          headers[match[1]] = match[2]
+          header = match[1]
+          value = match[2]
+          if header and value
+            #@ts-ignore
+            headers[header] = value
+      return
 
     content = chunk.slice(headerEnd+4, end)
 
@@ -46,15 +53,11 @@ parseFormDataText = (text, f) ->
       buffer[i] = content.charCodeAt(i)
       i++
 
-    if type # file
-      [_, name, filename] = headers["Content-Disposition"].match(/name="([^"]+)"; filename="([^"]+)"/)
-
-      f.set name, new Blob([buffer], type: type), filename
-    else
-      [_, name] = headers["Content-Disposition"].match(/name="([^"]+)"/)
-
-      # need to decode text content into utf-8
-      f.set name, textDecoder.decode(buffer)
+    match = headers["Content-Disposition"].match(/name="([^"]+)"; filename="([^"]+)"/)
+    if match
+      [_, name] = match
+      if name
+        f.set name, new Blob([buffer], type: type)
 
     pos = end + 2
 
