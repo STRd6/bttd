@@ -1,9 +1,10 @@
-import * as PIXIType from "pixi.js"
+import assertType from "assert"
 
-import TinyG, { GameInstance } from "@danielx/tiny-game"
+import TinyGameType, { GameInstance, PIXI as PIXIType } from "@danielx/tiny-game"
 
 declare global {
   var PIXI: typeof PIXIType
-  const TinyGame: TinyG
+  const TinyGame: typeof TinyGameType
+  var assert: typeof assertType
   const game: GameInstance
 }

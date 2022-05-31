@@ -38,7 +38,6 @@ parseFormDataText = (text, f) ->
           header = match[1]
           value = match[2]
           if header and value
-            #@ts-ignore
             headers[header] = value
       return
 
@@ -53,11 +52,13 @@ parseFormDataText = (text, f) ->
       buffer[i] = content.charCodeAt(i)
       i++
 
-    match = headers["Content-Disposition"].match(/name="([^"]+)"; filename="([^"]+)"/)
-    if match
-      [_, name] = match
-      if name
-        f.set name, new Blob([buffer], type: type)
+    contentDisposition = headers["Content-Disposition"]
+    if contentDisposition
+      match = contentDisposition.match(/name="([^"]+)"; filename="([^"]+)"/)
+      if match
+        [_, name] = match
+        if name
+          f.set name, new Blob([buffer], type: type)
 
     pos = end + 2
 

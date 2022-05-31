@@ -1,5 +1,5 @@
-{PI, abs, cos, floor, max, min, sign, sin} = Math
-{BitmapText, Container, DisplayObject, NineSlicePlane, ParticleContainer, Point, Sprite} = PIXI
+{PI, abs, atan2, cos, floor, max, min, sign, sin} = Math
+{BitmapText, Container, DisplayObject, NineSlicePlane, ParticleContainer, Point, Sprite, Texture} = PIXI
 {ext, ui, util} = TinyGame
 {loadSpritesheet, parseLevel} = ext
 {HealthBar} = ui
@@ -14,6 +14,8 @@
   cullCheckSym
   lookupTable
   noise1d
+  poisson_0_5
+  poisson_1
   to8WayDirection
 } = require("./util")
 Data = require "./data"
@@ -92,33 +94,6 @@ tossItem = (e, v, data) ->
     vx: v.x
     vy: v.y
 
-# very rough approximation of 4bit poisson distribution mean=0.5
-poisson_0_5 = (bits) ->
-  b = bits & 0xf
-  if b < 10
-    0
-  else if b < 15
-    1
-  else
-    2
-
-# Convert a 4 bit number into a ~poisson distribution mean=1 with counts 0-3
-# 0: 37.5%
-# 1: 37.5%
-# 2: 18.75%
-# 3: 06.25%
-poisson_1 = (bits) ->
-  b = bits & 0xf
-
-  if b < 6
-    0
-  else if b < 12
-    1
-  else if b < 15
-    2
-  else
-    3
-
 rateTables = [poisson_0_5, poisson_1]
 
 # Generate loot based on noise function, seeded from entity ID
@@ -169,6 +144,11 @@ spawnTreasure = (e, p=0, guaranteedDrops=0, rateTable=0) ->
 
 defaultBehaviors = ["display:object:sprite", "display:component:debug"]
 
+#
+###*
+@param player {import("@danielx/tiny-game").Entity}
+@param weapon {unknown}
+###
 bladeAttack = (player, weapon) ->
   {attackCooldown, controller} = player
   return if attackCooldown > 0
@@ -537,7 +517,10 @@ addBehaviors
       width = 2 * e.hw
       height = 2 * e.hh
 
-      border = new NineSlicePlane game.textures.highlight_9s, 1, 1, 1, 1
+      highlightTexture = game.textures.highlight_9s
+      assert highlightTexture
+
+      border = new NineSlicePlane highlightTexture, 1, 1, 1, 1
       border.tint = borderColor
       border.width = width
       border.height = height

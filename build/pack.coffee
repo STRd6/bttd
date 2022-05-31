@@ -77,16 +77,20 @@ if require.main is module
   ###* @type {[string, Buffer][]} ###
   entries = []
 
+  #@ts-ignore top level await
   for await path from getFiles(base)
     relative = path.replace(base, "").replace(/\\/g, "/")
     console.log relative
     ###* @type {[string, Buffer]} ###
+    #@ts-ignore top level await
     entry = [relative, await readFile(path)]
     entries.push entry
 
+  #@ts-ignore top level await
   buf = await pack entries
   console.log buf
 
+  #@ts-ignore top level await
   await writeFile(outPath, buf)
 
   process.exit()
