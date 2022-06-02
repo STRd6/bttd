@@ -4,6 +4,12 @@
 {addBehaviors, addEntity} = game
 {floor} = Math
 
+#
+###*
+@param name {string}
+@param size {number}
+###
+#@ts-ignore
 window.tileMode = (name, size) ->
   game.hardReset()
 
@@ -37,6 +43,10 @@ addBehaviors
 
       center = new Point 0.5, 0.5
 
+      #
+      ###*
+      @param s {Sprite}
+      ###
       setTileProps = (s) ->
         s.texture = window.activeSprite.texture
         if randomFlip
@@ -75,7 +85,9 @@ addBehaviors
 
           layers[activeLayer].addChild s
 
-      background = new TilingSprite game.textures.editorBG, e.width, e.height
+      bgTexture = game.textures.editorBG
+      assert bgTexture
+      background = new TilingSprite bgTexture, e.width, e.height
       background.interactive = true
       background.on "pointerdown", ({data}) ->
         paint(data)
@@ -249,8 +261,14 @@ addBehaviors
 
         viewport.x = floor -x + shw + e.x
         viewport.y = floor -y + shh + e.y
+      return
 
     destroy: (e) ->
       e._cleanup?()
 
 module.exports = {}
+
+#
+###*
+@typedef {import("pixi.js").Sprite} Sprite
+###

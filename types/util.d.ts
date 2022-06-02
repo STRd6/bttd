@@ -1,4 +1,7 @@
+import { BIT } from "@danielx/tiny-game"
 import { squirrel3 } from "@danielx/tiny-game/types/util"
+
+export type NumberLike = number | boolean | BIT
 
 /**
 Very rough approximation of 4bit poisson distribution mean=0.5
@@ -30,10 +33,10 @@ export function poisson_1(bits: number): 0 | 1 | 2 | 3
  3  2  1
 ```
 
-@param x {number}
-@param y {number}
+@param x
+@param y
 */
-export function to8WayDirection(x: number, y: number): 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
+export function to8WayDirection(x: NumberLike, y: NumberLike): 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
 
 /**
 Map a list of properties to a lookup table keyed by `key`. The value of `key` is

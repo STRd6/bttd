@@ -28,6 +28,7 @@ CENTER = new Point 0.5, 0.5
 
 Object.defineProperty DisplayObject.prototype, cullCheckSym,
   configurable: true # For hot reloading
+  ###* @param worldBounds {Bounds} ###
   value: (worldBounds) ->
     {entity} = @
     return unless entity
@@ -41,24 +42,34 @@ Object.defineProperty DisplayObject.prototype, cullCheckSym,
 
     @visible = collides(childBounds, worldBounds)
 
-ItemType = createEnum """
-  Food
-  Weapon
-"""
+ItemType = createEnum [
+  "Food"
+  "Weapon"
+]
 
-WeaponSubtype = createEnum """
-  dagger
-  sword
-  bow
-  fireBow
-"""
+WeaponSubtype = createEnum [
+  "dagger"
+  "sword"
+  "bow"
+  "fireBow"
+]
 
+#
+###*
+@param p {Player}
+@param e {ExtendedEntity}
+###
 interact = (p, e) ->
   if e.item
     addInventory p, e
   else
     e.interact(p)
 
+#
+###*
+@param p {Player}
+@param i {ExtendedEntity}
+###
 addInventory = (p, i) ->
   i.destroy = true
 
@@ -67,8 +78,6 @@ addInventory = (p, i) ->
   p.attackCooldown += 20
   if i.type is ItemType.Weapon
     sound.play "flipping"
-
-    subtype = p.weapon
 
     tossItem p, {x: 0, y: -5},
       type: ItemType.Weapon
@@ -79,6 +88,10 @@ addInventory = (p, i) ->
     p.maxHealth += 1
     p.regenerationDuration += 600 # gain 3 hp over 10s
 
+#
+###*
+@param n {number}
+###
 genWeapon = (n) ->
   if n < 7
     "sword"
@@ -87,6 +100,12 @@ genWeapon = (n) ->
   else
     "fireBow"
 
+#
+###*
+@param e {Point}
+@param v {Point}
+@param data {any}
+###
 tossItem = (e, v, data) ->
   Item Object.assign data,
     x: e.x
@@ -98,11 +117,16 @@ rateTables = [poisson_0_5, poisson_1]
 
 # Generate loot based on noise function, seeded from entity ID
 # same position p gives same results.
+###*
+@param e {ExtendedEntity}
+###
 spawnTreasure = (e, p=0, guaranteedDrops=0, rateTable=0) ->
   bits = noise1d(p, e.ID)
   r = bits & 0xf
 
-  n = max rateTables[rateTable](r), guaranteedDrops
+  table = rateTables[rateTable]
+  assert table
+  n = max table(r), guaranteedDrops
 
   return if n < 1
 
@@ -130,6 +154,7 @@ spawnTreasure = (e, p=0, guaranteedDrops=0, rateTable=0) ->
 
   for i in [0...n]
     v = vs[i]
+    assert v
 
     if i is 1
       w = genWeapon((bits & 0xf0) >> 4)
@@ -138,6 +163,7 @@ spawnTreasure = (e, p=0, guaranteedDrops=0, rateTable=0) ->
         subtype: w
     else
       data =
+        #@ts-ignore
         type: "food"
 
     tossItem(e, v, data)
@@ -146,16 +172,16 @@ defaultBehaviors = ["display:object:sprite", "display:component:debug"]
 
 #
 ###*
-@param player {import("@danielx/tiny-game").Entity}
-@param weapon {unknown}
+@param player {Player}
+@param weapon {Weapon}
 ###
 bladeAttack = (player, weapon) ->
   {attackCooldown, controller} = player
   return if attackCooldown > 0
   return unless controller
 
-  {x} = controller
-  return unless x
+  {x: attackPressed} = controller
+  return unless attackPressed
 
   {cooldown, atkIdx} = weapon
 
@@ -179,9 +205,14 @@ bladeAttack = (player, weapon) ->
     atkIdx: atkIdx
     sourceId: player.ID
 
+#
+###*
+@param player {Player}
+@param weapon {Weapon}
+###
 boltAttack = (player, weapon) ->
   {attackCooldown, controller, reloading} = player
-  if player.reloading and attackCooldown is 1
+  if reloading and attackCooldown is 1
     sound.play "blip"
     player.reloading = false
   return if attackCooldown > 0
@@ -207,6 +238,13 @@ boltAttack = (player, weapon) ->
       vy: v * sin theta
       sourceId: player.ID
 
+  return
+
+#
+###*
+@param player {Player}
+@param weapon {Weapon}
+###
 bowAttack = (player, weapon) ->
   {attackCooldown, controller} = player
   return if attackCooldown > 0
@@ -215,7 +253,7 @@ bowAttack = (player, weapon) ->
   {x, axes} = controller
   player.bowDraw ?= 0
 
-  player.xHeld = player.xHeld and x
+  player.xHeld = player.xHeld and !!x
 
   {
     baseVelocity
@@ -258,6 +296,8 @@ bowAttack = (player, weapon) ->
       sound.play "draw-max"
     player.bowDraw = min player.bowDraw + 1, drawMax
 
+  return
+
 weapons =
   dagger:
     attack: bladeAttack
@@ -293,16 +333,31 @@ weapons =
     projectileIdx: 2
     releaseSound: "pew"
 
+#
+###*
+@param player {Player}
+###
 playerAttack = (player) ->
+  #@ts-ignore Weapon enum?
   w = weapons[player.weapon]
   w.attack(player, w)
 
+#
+###*
+@param a {Bounds}
+@param b {Bounds}
+###
 overlap = (a, b) ->
   [
     min (a.hw + b.hw) - abs(b.x - a.x), 2 * a.hw, 2 * b.hw
     min (a.hh + b.hh) - abs(b.y - a.y), 2 * a.hh, 2 * b.hh
   ]
 
+#
+###*
+@param a {Bounds}
+@param b {Bounds}
+###
 collides = (a, b) ->
   abs(b.x - a.x) < a.hw + b.hw and
   abs(b.y - a.y) < a.hh + b.hh
@@ -319,6 +374,7 @@ addBehaviors
     update: (e) ->
       if e.maxAge > 0 and e.age >= e.maxAge
         e.destroy = true
+      return
 
   attack:
     properties:
@@ -460,6 +516,7 @@ addBehaviors
       if e.health <= 0
         e.die = true
         e.destroy = true
+      return
 
     die: ->
       sound.play "die"
@@ -1326,3 +1383,11 @@ game.start = ->
           y: (y+0.5) * tileHeight
   .catch console.error
 
+#
+###*
+@typedef {{x: number, y: number, hw: number, hh: number}} Bounds
+@typedef {import("../types/types").Player} Player
+@typedef {import("../types/types").ExtendedEntity} ExtendedEntity
+@typedef {import("../types/types").Weapon} Weapon
+@typedef {{x: number, y: number}} Point
+###

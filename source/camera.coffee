@@ -4,6 +4,7 @@
 {cullCheckSym} = require "./util"
 {clamp} = TinyGame.util
 
+#@ts-ignore https://github.com/microsoft/TypeScript/issues/17867
 game.addBehaviors
   "display:camera:default":
     #
@@ -69,7 +70,7 @@ game.addBehaviors
       {viewport, border} = camera
       close = false
       #
-      ###* @type {Player | undefined }###
+      ###* @type {Point | undefined}###
       target = undefined
 
       #
@@ -221,4 +222,5 @@ cameraToWorldBounds = (e, camera) ->
 @typedef {import("../types/camera").CameraEntity} CameraEntity
 @typedef {import("../types/camera").Camera} Camera
 @typedef {import("../types/player").Player} Player
+@typedef {import("../types/types").SimplePoint} Point
 ###
