@@ -346,6 +346,7 @@ playerAttack = (player) ->
 ###*
 @param a {Bounds}
 @param b {Bounds}
+@return {[number, number]}
 ###
 overlap = (a, b) ->
   [
@@ -367,10 +368,12 @@ addBehaviors
     properties:
       age: U16
 
+    ###* @param e {ExtendedEntity} ###
     update: (e) ->
       e.age++
 
   expires:
+    ###* @param e {ExtendedEntity} ###
     update: (e) ->
       if e.maxAge > 0 and e.age >= e.maxAge
         e.destroy = true
@@ -379,9 +382,11 @@ addBehaviors
   attack:
     properties:
       sourceId: I32
+    ###* @param e {ExtendedEntity} ###
     create: (e) ->
       e.damage ?= 1
 
+    ###* @param e {ExtendedEntity} ###
     update: (e) ->
       targets = game.entities.filter (t) ->
         # damageable and don't damage self
@@ -434,6 +439,7 @@ addBehaviors
         value: false
         writable: true
 
+    ###* @param e {ExtendedEntity} ###
     update: (e) ->
       # reset floor status
       e.onFloor = false
@@ -506,12 +512,15 @@ addBehaviors
 
         e.onFloor = e.onFloor or !!objectsOn.length
 
+      return
+
   damageable:
     properties:
       damageable:
         value: true
       health: U8
 
+    ###* @param e {ExtendedEntity} ###
     update: (e) ->
       if e.health <= 0
         e.die = true
@@ -522,7 +531,7 @@ addBehaviors
       sound.play "die"
 
   debugger:
-    update: (e) ->
+    update: ->
       game.system.input.controllers.forEach (controller) ->
         if controller.pressed.lb
           game.debug = !game.debug
@@ -744,6 +753,7 @@ addBehaviors
       textureKey:
         value: "jumper"
 
+    ###* @param e {ExtendedEntity} ###
     create: (e) ->
       e.floorVelocity ?= 0
 
@@ -775,14 +785,19 @@ addBehaviors
           e.vx = cos(theta)
           e.onFloor = false
 
+      return
+
+    ###* @param e {ExtendedEntity} ###
     die: (e) ->
       spawnTreasure(e, game.tick)
 
   facing:
+    ###* @param e {ExtendedEntity} ###
     create: (e) ->
       e.facingPrevX ?= 1
       e.facing ?= [1, 0]
 
+    ###* @param e {ExtendedEntity} ###
     update: (e) ->
       {controller} = e
       [dx, dy] = controller.axes
@@ -810,11 +825,13 @@ addBehaviors
       e.facing = [x, y]
 
   flaming:
+    ###* @param e {ExtendedEntity} ###
     create: (e) ->
       e.light ?= true
       e.r1 ?= 32
       e.r2 ?= 48
 
+    ###* @param e {ExtendedEntity} ###
     update: (e) ->
       if game.tick % 4 is 0
         addEntity
@@ -840,6 +857,7 @@ addBehaviors
         configurable: true
         enumerable: true
 
+    ###* @param e {ExtendedEntity} ###
     update: (e) ->
       players = game.entities.filter (e) ->
         e.player
@@ -917,9 +935,11 @@ addBehaviors
         if @type is ItemType.Weapon
           String(@subtype) + "-item"
 
+    ###* @param e {ExtendedEntity} ###
     create: (e) ->
       e.onFloorPrev = true
 
+    ###* @param e {ExtendedEntity} ###
     update: (e) ->
       if e.onFloor and !e.onFloorPrev
         sound.play "thud"
@@ -927,12 +947,11 @@ addBehaviors
       e.onFloorPrev = e.onFloor
 
   light:
+    ###* @param e {ExtendedEntity} ###
     create: (e) ->
       e.light ?= true
       e.r1 ?= 60
       e.r2 ?= 120
-
-    update: (e) ->
 
   physics:
     properties:
@@ -957,11 +976,13 @@ addBehaviors
       vx: FIXED16()
       vy: FIXED16()
 
+    ###* @param e {ExtendedEntity} ###
     create: (e) ->
       e.friction ?= 0
 
       e.floorVelocity ?= 0
 
+    ###* @param e {ExtendedEntity} ###
     update: (e) ->
       e.vx += e.ax
       if e.friction and e.onFloor
@@ -975,9 +996,11 @@ addBehaviors
 
   # Player item pickup behavior
   picker:
+    ###* @param p {ExtendedEntity} ###
     create: (p) ->
       p.bubbleVisible ?= false
 
+    ###* @param p {ExtendedEntity} ###
     update: (p) ->
       p.bubbleVisible = false
       if p.onFloor
@@ -990,7 +1013,7 @@ addBehaviors
           dxa - dxb
 
         if nearest
-          p.bubbleVisible = nearest.ID
+          p.bubbleVisible = true
 
           if p.controller?.rb and p.attackCooldown <= 0
             interact p, nearest
@@ -1014,6 +1037,7 @@ addBehaviors
         else
           "fox"
 
+    ###* @param p {ExtendedEntity} ###
     create: (p) ->
       p.floorVelocity ?= 0
       p.friction ?= 0.075
@@ -1024,6 +1048,7 @@ addBehaviors
       p.r2 ?= 200
       p.weapon ?= "dagger"
 
+    ###* @param p {ExtendedEntity} ###
     update: (p) ->
       if p.regenerationDuration > 0
         p.health += p.regenerationAmount
@@ -1041,7 +1066,7 @@ addBehaviors
         p.attackCooldown--
 
       {controller} = p
-      {axes, a, b, x, y, lb, up, right, pressed} = controller
+      {axes, a, x, pressed} = controller
       [dx, dy] = axes
 
       if pressed.up
@@ -1081,7 +1106,7 @@ addBehaviors
       p.dropping = p.dropping and p.facing[1] is 1
 
     die: ->
-      check = game.entities.reduce ({age, x, y}, {age:eAge, x:eX, y: eY}) ->
+      check = game.entities.reduce ({age, x, y}, {age: eAge, x: eX, y: eY}) ->
         age: age + (eAge|0)
         x: x + (eY|0)
         y: y + (eY|0)
@@ -1139,7 +1164,7 @@ addBehaviors
     update: (e) ->
       playerIds = new Set
 
-      players = game.entities.forEach (p) ->
+      game.entities.forEach (p) ->
         if p.player
           playerIds.add p.controller.key
 

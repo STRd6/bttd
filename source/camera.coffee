@@ -221,6 +221,6 @@ cameraToWorldBounds = (e, camera) ->
 ###*
 @typedef {import("../types/camera").CameraEntity} CameraEntity
 @typedef {import("../types/camera").Camera} Camera
-@typedef {import("../types/player").Player} Player
+@typedef {import("../types/types").Player} Player
 @typedef {import("../types/types").SimplePoint} Point
 ###

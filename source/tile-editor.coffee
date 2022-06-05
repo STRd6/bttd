@@ -21,8 +21,12 @@ window.tileMode = (name, size) ->
 
 # In Game Editors
 
+###* @type {any} TODO ###
+activeSprite = null
+
 addBehaviors
   "display:hud:tile-editor":
+    ###* @param e {any} TODO ###
     create: (e) ->
       e.x ?= 0
       e.y ?= 0
@@ -33,6 +37,7 @@ addBehaviors
       e.snap ?= 16
       e.texture ?= "rotting-pixels-tileset"
 
+    ###* @param e {any} TODO ###
     display: (e) ->
       editor = new Container
 
@@ -48,19 +53,19 @@ addBehaviors
       @param s {Sprite}
       ###
       setTileProps = (s) ->
-        s.texture = window.activeSprite.texture
+        s.texture = activeSprite.texture
         if randomFlip
           s.scale.x = (rand(2) - 0.5) * 2
           s.scale.y = (rand(2) - 0.5) * 2
         else
           s.scale.x = scale.x
           s.scale.y = scale.y
-        s.data = window.activeSprite.data
+        s.data = activeSprite.data
 
       prevX = null
       prevY = null
       paint = (data) ->
-        return unless window.activeSprite
+        return unless activeSprite
         {buttons, global} = data
 
         {x, y} = global
@@ -73,14 +78,14 @@ addBehaviors
         prevY = y
 
         if buttons
-          s = new Sprite window.activeSprite.texture
+          s = new Sprite activeSprite.texture
           setTileProps s
           s.anchor = center
           s.x = x + snap / 2
           s.y = y + snap / 2
           s.interactive = true
           s.pointerdown = ({currentTarget})->
-            if window.activeSprite
+            if activeSprite
               setTileProps(currentTarget)
 
           layers[activeLayer].addChild s
@@ -211,7 +216,7 @@ addBehaviors
         sprite.y = margin + y * (h + margin)
         sprite.interactive = true
         sprite.on "pointerdown", ({currentTarget}) ->
-          window.activeSprite = currentTarget
+          activeSprite = currentTarget
           highlight.x = currentTarget.x - 1
           highlight.y = currentTarget.y - 1
 
@@ -253,8 +258,12 @@ addBehaviors
 
       return editor
 
+    ###*
+    @param e {any} TODO
+    ###
     render: (e, editor) ->
       [viewport] = editor.children
+      assert viewport
 
       if e.target
         {x, y} = e.target
@@ -263,6 +272,7 @@ addBehaviors
         viewport.y = floor -y + shh + e.y
       return
 
+    ###* @param e {any} TODO ###
     destroy: (e) ->
       e._cleanup?()
 

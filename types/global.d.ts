@@ -7,9 +7,15 @@ interface Extensions {
   parseLevel: unknown
 }
 
+interface ExtendedGameInstance extends GameInstance {
+  debug: boolean
+
+  hardReset(): void
+}
+
 declare global {
   var PIXI: typeof PIXIType
   const TinyGame: (typeof TinyGameType) & { ext: Extensions }
   var assert: typeof assertType
-  const game: GameInstance
+  const game: ExtendedGameInstance
 }
