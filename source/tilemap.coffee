@@ -1,5 +1,6 @@
 {Container, Point, Sprite} = PIXI
 {wrap} = TinyGame.util
+{floor} = Math
 
 Data = require "./data"
 {cullCheckSym, lookupTable, noise1d} = require "./util"
@@ -13,11 +14,13 @@ game.addBehaviors
       tilemap:
         value: true
 
+    ###* @param e {TilemapEntity} ###
     create: (e) ->
       {data, width, height} = game.levelData
 
       # proto for tile blocks
       tileBase = Object.defineProperties {},
+        #@ts-ignore TODO
         lookupTable("tileIdx", Data.tile, """
           accentTop
           accentBottom
@@ -131,6 +134,7 @@ game.addBehaviors
               adjacent: display.adjacent
               tileIdx: tileIdxMap.get(n)
 
+    ###* @param e {TilemapEntity} ###
     display: (e) ->
       # Is there a good way to delegate display and render calls to every item
       # in the collection? How easy is it to reuse the WallTile "class" here?
@@ -140,6 +144,7 @@ game.addBehaviors
       container = new Container
 
       Object.defineProperty container, cullCheckSym,
+        #@ts-ignore TODO
         value: (worldBounds) ->
           # TODO: add x, y offset for world bounds
 
@@ -154,7 +159,9 @@ game.addBehaviors
         tile = createTile data, i
 
         # Manually adding debug component behavior, probably a little brittle
+        #@ts-ignore
         tile.debugDisplay = game.behaviors["display:component:debug"].display(data)
+        #@ts-ignore
         tile.addChild tile.debugDisplay
 
         container.addChild tile
@@ -163,14 +170,25 @@ game.addBehaviors
 
     # No need to update since tiles are static for now
     # may need to handle animations later
-    render: (e, container) ->
+    ###*
+    @param _e {TilemapEntity}
+    @param container {Container}
+    ###
+    render: (_e, container) ->
       container.children.forEach (c) ->
+        #@ts-ignore
         c.debugDisplay.visible = game.debug
 
 # Gnarly method for creating a PIXI container for tile blocks
+###*
+@param e {Block}
+@param index {number}
+###
 createTile = (e, index) ->
-  {adjacent, hw, hh, vary, x, y, tileIdx} = e
+  {adjacent, hw, hh, x, y, tileIdx} = e
 
+  tileData = Data.tile[tileIdx]
+  assert tileData
   {
     accentTop
     accentRight
@@ -178,14 +196,16 @@ createTile = (e, index) ->
     accentLeft
     tile
     vary
-  } = Data.tile[tileIdx]
+  } = tileData
 
   {seed, tileset} = game
 
+  #@ts-ignore
   texture = tileset[tile]
 
   # Generate bits and use result as next seed
   nextRand = ->
+    #@ts-ignore
     seed = noise1d(index, seed)
 
   width = hw * 2
@@ -194,6 +214,7 @@ createTile = (e, index) ->
   container = new Container
   container.x = x
   container.y = y
+  #@ts-ignore
   container.entity = e
 
   thw = tileWidth / 2
@@ -206,6 +227,9 @@ createTile = (e, index) ->
     while x < width
       bits = nextRand()
       mask = 1
+      #
+      ###* @type {[number, number, number, number, number, number]} ###
+      #@ts-ignore
       randomUnits = [0...6].map (i) ->
         unit = ((bits & mask) >> i) || -1
         mask <<= 1
@@ -219,6 +243,7 @@ createTile = (e, index) ->
       sprite = new Sprite texture
       sprite.x = x - hw + thw
       sprite.y = y - hh + thh
+      #@ts-ignore
       sprite.anchor = CENTER
       if vary
         sprite.scale.x = randomUnits[0]
@@ -227,44 +252,52 @@ createTile = (e, index) ->
       container.addChild sprite
 
       # Add accents on edges based on non-adjacency to tiles of same type
+      #@ts-ignore
       aTexture = accentLeft and tileset[wrap(accentLeft, randomIndex0)]
       if x is 0 and adjacent? and !(adjacent & 1) and aTexture
         accent = new Sprite aTexture
         accent.x = x - hw + thw
         accent.y = y - hh + thh
+        #@ts-ignore
         accent.anchor = CENTER
         if vary
           accent.scale.y = randomUnits[2]
 
         container.addChild accent
 
+      #@ts-ignore
       aTexture = accentRight and tileset[wrap(accentRight, randomIndex1)]
       if x is width - tileWidth and adjacent? and !(adjacent & 4) and aTexture
         accent = new Sprite aTexture
         accent.x = x - hw + thw
         accent.y = y - hh + thh
+        #@ts-ignore
         accent.anchor = CENTER
         if vary
           accent.scale.y = randomUnits[3]
 
         container.addChild accent
 
+      #@ts-ignore
       aTexture = accentTop and tileset[wrap(accentTop, randomIndex2)]
       if y is 0 and adjacent? and !(adjacent & 8) and aTexture
         accent = new Sprite aTexture
         accent.x = x - hw + thw
         accent.y = y - hh + thh
+        #@ts-ignore
         accent.anchor = CENTER
         if vary
           accent.scale.x = randomUnits[4]
 
         container.addChild accent
 
+      #@ts-ignore
       aTexture = accentBottom and tileset[wrap(accentBottom, randomIndex3)]
       if y is height - tileHeight and adjacent? and !(adjacent & 2) and aTexture
         accent = new Sprite aTexture
         accent.x = x - hw + thw
         accent.y = y - hh + thh
+        #@ts-ignore
         accent.anchor = CENTER
         if vary
           accent.scale.x = randomUnits[5]
@@ -277,6 +310,13 @@ createTile = (e, index) ->
   return container
 
 # 0b1111 top,right,bottom,left
+###*
+@param x {number}
+@param y {number}
+@param n {number}
+@param data {Uint8Array}
+@param width {number}
+###
 calculateAdjacent = (x, y, n, data, width) ->
   v = data[(y - 1) * width + x]
   t = !v? or v is n
@@ -285,6 +325,7 @@ calculateAdjacent = (x, y, n, data, width) ->
     v = data[y * width + x + 1]
     r = !v? or v is n
   else
+    #@ts-ignore
     r = 1
 
   v = data[(y + 1) * width + x]
@@ -294,6 +335,15 @@ calculateAdjacent = (x, y, n, data, width) ->
     v = data[y * width + x - 1]
     l = !v? or v is n
   else
+    #@ts-ignore
     l = 1
 
+  #@ts-ignore
   t * 8 + r * 4 + b * 2 + l
+
+#
+###*
+@typedef {import("../types/types").TilemapEntity} TilemapEntity
+@typedef {import("../types/types").Block} Block
+@typedef {import("@danielx/tiny-game").PIXI.Container} Container
+###

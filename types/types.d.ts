@@ -1,4 +1,4 @@
-import { BIT, Entity } from "@danielx/tiny-game";
+import { BIT, Entity, PIXI } from "@danielx/tiny-game";
 import { BufferedController, Controller } from "@danielx/tiny-game"
 
 export interface Bounds {
@@ -48,11 +48,21 @@ export interface Light {
   r2: number
 }
 
+export interface Block extends Bounds {
+  adjacent: number | undefined
+  tileIdx: number
+}
+
+export interface TilemapEntity extends Bounds {
+  blocks: Block[]
+}
+
 export interface ExtendedEntity extends Player, Light {
   age: number
   bounce: boolean
   bubbleVisible: boolean
   damage: number
+  damageable: boolean
   item: boolean
   floorVelocity: number
   friction: number
@@ -63,6 +73,7 @@ export interface ExtendedEntity extends Player, Light {
   onFloorPrev: boolean
   subtype: string
   sourceId: number
+  texture: PIXI.Texture
   type: unknown
   interact: (p: Player) => void
 }

@@ -288,6 +288,7 @@ bowAttack = (player, weapon) ->
           y: player.y
           vx: v * cos theta
           vy: v * sin theta
+          sourceId: player.ID
 
       player.bowDraw = 0
 
@@ -409,6 +410,7 @@ addBehaviors
             maxAge: 60
             x: e.x
             y: e.y
+        return
 
   chest:
     properties:
@@ -418,11 +420,12 @@ addBehaviors
       hw: get: -> 8
       hh: get: -> 8
       interact: get: ->
-        (p) ->
+        ->
           if !@empty
             sound.play "chest-open"
             spawnTreasure(@, game.tick, 1, 1)
             @empty = true
+          return
 
       interactive: get: ->
         !@empty
@@ -540,16 +543,18 @@ addBehaviors
           console.log "Debug !"
 
   "display:component:bubble":
-    display: (e) ->
+    display: ->
       # Preview bubble
       bubble = new Sprite game.textures.bubble
       bubble.visible = false
       bubble.name = "bubble"
+      #@ts-ignore
       bubble.anchor = new Point 0.5, 0.5
 
       # item icon
       icon = new Sprite
       icon.name = "icon"
+      #@ts-ignore
       icon.anchor = new Point 0.5, 0.5
       icon.y = 2
       bubble.addChild icon
@@ -558,6 +563,7 @@ addBehaviors
         fontName: "m5x7"
         tint: 0x222034
       text.y = -5
+      #@ts-ignore
       text.anchor = new Point 0.5, 0.5
       bubble.addChild text
 
@@ -573,6 +579,7 @@ addBehaviors
         bubble.y = floor -18 + 2 * sin 2 * PI * game.tick / 60
 
         bubble.getChildByName("icon").texture = target.texture
+      return
 
   "display:component:debug":
     display: (e) ->
@@ -962,11 +969,11 @@ addBehaviors
 
       # These are computed based on behaviors
       ax:
-        value: ax ? 0
+        value: 0
         writable: true
         configurable: true
       ay:
-        value: ay ? 0
+        value: 0
         writable: true
         configurable: true
 
@@ -1167,6 +1174,7 @@ addBehaviors
       game.entities.forEach (p) ->
         if p.player
           playerIds.add p.controller.key
+        return
 
       game.system.input.controllers.forEach (c) ->
         if c.pressed.start and !playerIds.has(c.key)
@@ -1282,11 +1290,11 @@ Player = addClass
   behaviors: defaultBehaviors.concat([
     "input:controller"
     "display:component:bubble"
+    "damageable"
     "facing"
     "player"
     "physics"
     "collisions"
-    "damageable"
     "picker"
   ])
   ,
@@ -1316,6 +1324,10 @@ Torch = addClass
 TreasureChest = addClass
   behaviors: defaultBehaviors.concat ["chest"]
 
+#
+###*
+@type {{[key: number]: (pos: {x: number, y: number}) => Entity}}
+###
 makers =
   5: ({x, y}) ->
     Torch
@@ -1353,6 +1365,10 @@ makers =
       x: x
       y: y
 
+#
+###*
+@param path {string}
+###
 loadLevel = (path, offset={x:0, y:0}) ->
   parseLevel(path)
   .then (levelData) ->
@@ -1396,7 +1412,7 @@ game.start = ->
       behaviors: ["display:object:tilemap"]
 
     # Add Entities
-    {data, width, height} = game.levelData
+    {data, width} = game.levelData
 
     data.forEach (n, i) ->
       x = i % width
@@ -1412,6 +1428,7 @@ game.start = ->
 ###*
 @typedef {{x: number, y: number, hw: number, hh: number}} Bounds
 @typedef {import("../types/types").Player} Player
+@typedef {import("@danielx/tiny-game").Entity} Entity
 @typedef {import("../types/types").ExtendedEntity} ExtendedEntity
 @typedef {import("../types/types").Weapon} Weapon
 @typedef {{x: number, y: number}} Point

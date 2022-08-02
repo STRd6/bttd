@@ -21,7 +21,8 @@ window.tileMode = (name, size) ->
 
 # In Game Editors
 
-###* @type {any} TODO ###
+#
+###* @type {Sprite & {data: unknown} | null} TODO ###
 activeSprite = null
 
 addBehaviors
@@ -50,9 +51,10 @@ addBehaviors
 
       #
       ###*
-      @param s {Sprite}
+      @param s {Sprite & {data: unknown}}
       ###
       setTileProps = (s) ->
+        return unless activeSprite
         s.texture = activeSprite.texture
         if randomFlip
           s.scale.x = (rand(2) - 0.5) * 2
@@ -62,8 +64,12 @@ addBehaviors
           s.scale.y = scale.y
         s.data = activeSprite.data
 
+      #@ts-ignore
       prevX = null
+      #@ts-ignore
       prevY = null
+      #
+      ###* @param data {any} TODO ###
       paint = (data) ->
         return unless activeSprite
         {buttons, global} = data
@@ -73,22 +79,28 @@ addBehaviors
         x = floor(x / snap) * snap
         y = floor(y / snap) * snap
 
+        #@ts-ignore
         return if prevX is x and prevY is y
         prevX = x
         prevY = y
 
         if buttons
           s = new Sprite activeSprite.texture
+          #@ts-ignore
           setTileProps s
+          #@ts-ignore
           s.anchor = center
           s.x = x + snap / 2
           s.y = y + snap / 2
           s.interactive = true
+          #@ts-ignore
           s.pointerdown = ({currentTarget})->
             if activeSprite
               setTileProps(currentTarget)
 
+          #@ts-ignore
           layers[activeLayer].addChild s
+        return
 
       bgTexture = game.textures.editorBG
       assert bgTexture
@@ -100,6 +112,7 @@ addBehaviors
       editor.addChild background
 
       viewport = new Container
+      #@ts-ignore
       editor.viewport = viewport
       editor.addChild viewport
 
@@ -117,6 +130,7 @@ addBehaviors
       saveButton = UIButton "Save", ->
         console.log
           layers: layers.map (layer) ->
+            #@ts-ignore
             layer.children.map ({x, y, data, scale}) ->
               {
                 x, y,
@@ -127,19 +141,29 @@ addBehaviors
       saveButton.y = 360 - saveButton.height - 2
       editor.addChild saveButton
 
+      #
+      ###*
+      @param name {string}
+      @param fn {(args: any[]) => void}
+      @return {Container & {active: boolean}}
+      ###
       addButton = (name, fn) ->
         button = UIButton name, fn
         button.x = offset
         button.y = margin
         editor.addChild button
         offset += button.width + margin
+        #@ts-ignore
         return button
 
+      #
+      ###* @param i {number} ###
       setActiveLayer = (i) ->
         layerButtons.forEach (b) ->
           b.active = false
 
         activeLayer = i
+        #@ts-ignore
         layerButtons[i].active = true
         # Only children of the active layer are interactive
         layers.forEach (l, j) ->
@@ -148,9 +172,10 @@ addBehaviors
 
       activeLayer = floor layers.length / 2
       offset = margin
-      layerButtons = layers.map (layer, i) ->
-        layerButton = addButton "#{i+1}", setActiveLayer.bind(null, i)
+      layerButtons = layers.map (_layer, i) ->
+        addButton "#{i+1}", setActiveLayer.bind(null, i)
 
+      #@ts-ignore
       layerButtons[activeLayer].active = true
       offset += 2 * margin
 
@@ -179,6 +204,7 @@ addBehaviors
       palette = new Container
       palette.interactive = true
 
+      #@ts-ignore
       baseTexture = game.textures[e.texture].baseTexture
 
       w = size
@@ -187,7 +213,9 @@ addBehaviors
       tilesTall = baseTexture.height / h
       numTiles = tilesWide * tilesTall
 
-      bg = new TilingSprite game.textures.translucentBG,
+      translucentBGTexture = game.textures.translucentBG
+      assert translucentBGTexture
+      bg = new TilingSprite translucentBGTexture,
         tilesWide * (w + margin) + margin,
         360 - 2 * margin
       palette.addChild bg
@@ -195,7 +223,9 @@ addBehaviors
       palette.x = 640 - bg.width - margin
       palette.y = margin
 
-      highlight = new NineSlicePlane game.textures.highlight_9s, 1, 1, 1, 1
+      highlight9sTexture = game.textures.highlight_9s
+      assert highlight9sTexture
+      highlight = new NineSlicePlane highlight9sTexture, 1, 1, 1, 1
       highlight.alpha = 0.75
       highlight.x = highlight.y = margin - 1
       highlight.width = w + 2
@@ -210,6 +240,7 @@ addBehaviors
           new Rectangle x * w, y * w, w, h
 
         sprite = new Sprite tex
+        #@ts-ignore
         sprite.data =
           index: i
         sprite.x = margin + x * (w + margin)
@@ -226,10 +257,13 @@ addBehaviors
 
       editor.addChild palette
 
+      #
+      ###* @param e {KeyboardEvent} ###
       keyHandler = (e) ->
         return if e.defaultPrevented
+        #@ts-ignore
         return if stopKeyboardHandler e, e.target, ""
-        {key, code} = e
+        {key} = e
 
         n = parseInt(key, 10)
         if !isNaN(n) and n > 0
@@ -260,6 +294,7 @@ addBehaviors
 
     ###*
     @param e {any} TODO
+    @param editor {Container}
     ###
     render: (e, editor) ->
       [viewport] = editor.children
@@ -280,5 +315,6 @@ module.exports = {}
 
 #
 ###*
-@typedef {import("pixi.js").Sprite} Sprite
+@typedef {import("@danielx/tiny-game").PIXI.Container} Container
+@typedef {import("@danielx/tiny-game").PIXI.Sprite} Sprite
 ###

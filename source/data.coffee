@@ -21,6 +21,17 @@ module.exports =
     textureKey: "bolt"
   }]
 
+  #
+  ###* @type {{
+    accentTop?: number[]
+    accentBottom?: number[]
+    accentLeft?: number[]
+    accentRight?: number[]
+    ladder?: boolean
+    solid?: boolean
+    tile?: number
+    vary?: boolean
+  }[]} ###
   tile: [
     {}, # 0
     { # 1
